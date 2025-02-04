@@ -3,11 +3,7 @@ package nextstep.security.filter;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import nextstep.app.util.Base64Convertor;
-import nextstep.security.Authentication;
-import nextstep.security.AuthenticationException;
-import nextstep.security.AuthenticationManager;
-import nextstep.security.UsernamePasswordAuthenticationToken;
+import nextstep.security.*;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 
@@ -29,28 +25,21 @@ public class BasicAuthenticationFilter implements Filter {
             return;
         }
         try {
-            checkBasicAuthentication(authorization);
+            BasicToken basicAuthentication = BasicToken.parse((HttpServletRequest) request);
+            UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = UsernamePasswordAuthenticationToken.from(basicAuthentication);
+
+            Authentication authenticate = authenticationManager.authenticate(usernamePasswordAuthenticationToken);
+
+            SecurityContextHolder.getContext().setAuthentication(authenticate);
+
             filterChain.doFilter(request, response);
         } catch (Exception e) {
+            SecurityContextHolder.clearContext();
             ((HttpServletResponse) response).setStatus(HttpStatus.UNAUTHORIZED.value());
         }
     }
 
-    private void checkBasicAuthentication(String authorization) {
-        String credentials = authorization.split(" ")[1];
-        String decodedString = Base64Convertor.decode(credentials);
-        String[] usernameAndPassword = decodedString.split(":");
-        String username = usernameAndPassword[0];
-        String password = usernameAndPassword[1];
 
-        UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(username, password);
-
-        Authentication authenticate = authenticationManager.authenticate(usernamePasswordAuthenticationToken);
-
-        if (!authenticate.isAuthenticated()) {
-            throw new AuthenticationException();
-        }
-    }
 
     private boolean isNotBasic(String authorization) {
         return authorization == null || !BASIC_TYPE.equals(authorization.split(" ")[0]);

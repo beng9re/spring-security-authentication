@@ -33,4 +33,8 @@ public class UsernamePasswordAuthenticationToken implements Authentication {
     public static UsernamePasswordAuthenticationToken ofAuthenticated(String principal, String credentials){
         return new UsernamePasswordAuthenticationToken(principal, credentials, true);
     }
+
+    public static UsernamePasswordAuthenticationToken from(BasicToken basicAuthentication){
+        return new UsernamePasswordAuthenticationToken(basicAuthentication.getUsername(), basicAuthentication.getPassword());
+    }
 }
